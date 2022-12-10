@@ -49,7 +49,7 @@ namespace VCCorp.CrawlerPreview.DAO
             {
                 await _conn.OpenAsync();
 
-                string query = "insert ignore into crawler_preview.list_url (Url,CreateDate,Domain) values (@Url,@CreateDate,@Domain)";
+                string query = "insert ignore into crawler_preview.list_url (Url,CreateDate,Domain,Status) values (@Url,@CreateDate,@Domain,@Status)";
 
                 MySqlCommand cmd = new MySqlCommand();
                 cmd.Connection = _conn;
@@ -58,6 +58,7 @@ namespace VCCorp.CrawlerPreview.DAO
                 cmd.Parameters.AddWithValue("@Url", content.ReferUrl);
                 cmd.Parameters.AddWithValue("@CreateDate", content.CreateDate);
                 cmd.Parameters.AddWithValue("@Domain", content.Domain);
+                cmd.Parameters.AddWithValue("@Status", content.Status);
 
                 await cmd.ExecuteNonQueryAsync();
 
@@ -108,7 +109,7 @@ namespace VCCorp.CrawlerPreview.DAO
                 cmd.Parameters.AddWithValue("@Contents", content.Contents);
                 cmd.Parameters.AddWithValue("@Domain", content.Domain);
                 cmd.Parameters.AddWithValue("@ReferUrl", content.ReferUrl);
-                cmd.Parameters.AddWithValue("@CreateDate", content.CreateDate);              
+                cmd.Parameters.AddWithValue("@CreateDate", content.CreateDate);
 
                 await cmd.ExecuteNonQueryAsync();
 
@@ -153,6 +154,7 @@ namespace VCCorp.CrawlerPreview.DAO
                             data.Add(new ContentDTO
                             {
                                 ReferUrl = reader["Url"].ToString(),
+                                Status = (int)reader["Status"]
                             }
                             );
                         }
@@ -170,7 +172,46 @@ namespace VCCorp.CrawlerPreview.DAO
             return data;
         }
 
-       
+        /// <summary>
+        /// Update status
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public async Task<int> UpdateStatus(string url)
+        {
+            ContentDTO content = new ContentDTO();
+            int res = 0;
+            try
+            {
+                await _conn.OpenAsync();
 
-    }
+                string query = $"UPDATE crawler_preview.list_url SET Status = 1 WHERE Url = '{url}'";
+
+                MySqlCommand cmd = new MySqlCommand();
+                cmd.Connection = _conn;
+                cmd.CommandText = query;
+                cmd.Parameters.AddWithValue("@Status", content.Status);
+                await cmd.ExecuteNonQueryAsync();
+
+                res = 1;
+
+
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.ToLower().Contains("duplicate entry"))
+                {
+                    res = -2; // trùng link
+                }
+                else
+                {
+                    res = -1; // lỗi, bắt lỗi trả ra để sửa
+
+                    // ghi lỗi xuống fil
+                }
+            }
+
+            return res;
+        }
+    } 
 }

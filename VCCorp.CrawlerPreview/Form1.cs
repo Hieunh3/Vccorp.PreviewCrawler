@@ -65,8 +65,8 @@ namespace VCCorp.CrawlerPreview
                     }
 
                 case NamePage.BESTPRICE_TOUR:
-                    //Thread thrd1 = new Thread(new ThreadStart(ContentCrawlerTourBp));
-                    //thrd1.Start();
+                    Thread thrd1 = new Thread(new ThreadStart(ContentCrawlerTourBp));
+                    thrd1.Start();
                     Thread thrdDetails1 = new Thread(new ThreadStart(ContentCrawlerTourBpDeatail));
                     thrdDetails1.Start();
 

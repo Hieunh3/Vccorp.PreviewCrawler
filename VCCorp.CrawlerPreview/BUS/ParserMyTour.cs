@@ -75,6 +75,7 @@ namespace VCCorp.CrawlerPreview.BUS
                             content.CreateDate = DateTime.Now; // ngày bóc tách
                             content.CreateDate_Timestamp = Common.Utilities.DateTimeToUnixTimestamp(DateTime.Now); // ngày bóc tách chuyển sang dạng Timestamp
                             content.Domain = URL_MYTOUR;
+                            content.Status = 0;
                             contentList.Add(content);
 
                             ContentDAO msql = new ContentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
@@ -89,7 +90,7 @@ namespace VCCorp.CrawlerPreview.BUS
                     {
                         break;
                     }
-                    await Task.Delay(30_000);
+                    await Task.Delay(20_000);
 
                     string checkJs1 = await Common.Utilities.EvaluateJavaScriptSync(_jsClickShowMoreReview, _browser).ConfigureAwait(false);
                     if (checkJs == null)
@@ -97,7 +98,7 @@ namespace VCCorp.CrawlerPreview.BUS
                         break;
                     }
 
-                    await Task.Delay(30_000);
+                    await Task.Delay(20_000);
                 }
             }
             catch { }
@@ -122,121 +123,127 @@ namespace VCCorp.CrawlerPreview.BUS
                 //Đọc từng url để bóc
                 for (int i = 0; i < dataUrl.Count; i++)
                 {
-                    string url = URL_MYTOUR + dataUrl[i].ReferUrl;
-                    await _browser.LoadUrlAsync(url);
-                    await Task.Delay(10_000);
-
-                    string html = await Common.Utilities.GetBrowserSource(_browser).ConfigureAwait(false);
-                    _document.LoadHtml(html);
-                    html = null;
-
-                    //Bóc hotel detail
-                    ContentDTO content = new ContentDTO();
-                    content.Subject = _document.DocumentNode.SelectSingleNode("//div[(@id='rooms_overview')]//h1")?.InnerText;
-                    content.ImageThumb = _document.DocumentNode.SelectSingleNode("//div[contains(@id,'id-hotel-detail')]//img")?.Attributes["src"]?.Value ?? "";
-                    content.Domain = URL_MYTOUR;
-                    content.ReferUrl = url;
-                    content.CreateDate = DateTime.Now;
-
-                    //Lưu vào db
-                    ContentDAO msql = new ContentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
-                    await msql.InserContent(content);
-                    msql.Dispose();
-
-                    #region gửi đi cho ILS
-
-                    ArticleDTO_BigData ent = new ArticleDTO_BigData();
-
-                    ent.Id = Common.Utilities.Md5Encode(content.Id);
-                    ent.Content = content.Contents;
-
-                    //Get_Time là thời gian bóc 
-                    ent.Get_Time = content.CreateDate;
-                    ent.Get_Time_String = content.CreateDate.ToString("yyyy-MM-dd HH:mm:ss");
-
-                    ent.Description = content.Summary;
-
-                    ent.Title = content.Subject;
-                    ent.Url = content.ReferUrl;
-                    ent.Source_Id = 0;
-                    ent.Category = content.Category;
-                    ent.Image = content.ImageThumb;
-                    ent.urlAmphtml = "";
-
-                    ent.ContentNoRemoveHtml = ""; // xóa đi khi lưu xuống cho nhẹ
-
-                    string jsonPost = KafkaPreview.ToJson<ArticleDTO_BigData>(ent);
-                    KafkaPreview kafka = new KafkaPreview();
-                    //await kafka.InsertPost(jsonPost, "crawler-preview-post");;
-                    #endregion                    
-
-                    //Bóc list cmt
-                    HtmlNodeCollection divComment = _document.DocumentNode.SelectNodes("//div[contains(@class,'jss2')]//div[contains(@class,'MuiGrid-container')]");
-                    HtmlNode checkBtnLoadMore = _document.DocumentNode.SelectSingleNode("//div[contains(@id,'evaluate')]//div[3]//div[8]/div");
-
-                    if (divComment != null)
+                    int status = dataUrl[i].Status;
+                    if (status == 0)// check xem đã bóc hay chưa?
                     {
-                        foreach (HtmlNode item in divComment)
+                        string url = URL_MYTOUR + dataUrl[i].ReferUrl;
+                        string referUrl = dataUrl[i].ReferUrl;
+                        await _browser.LoadUrlAsync(url);
+                        await Task.Delay(10_000);
+
+                        string html = await Common.Utilities.GetBrowserSource(_browser).ConfigureAwait(false);
+                        _document.LoadHtml(html);
+                        html = null;
+
+                        //Bóc hotel detail
+                        ContentDTO content = new ContentDTO();
+                        content.Subject = _document.DocumentNode.SelectSingleNode("//div[(@id='rooms_overview')]//h1")?.InnerText;
+                        content.ImageThumb = _document.DocumentNode.SelectSingleNode("//div[contains(@id,'id-hotel-detail')]//img")?.Attributes["src"]?.Value ?? "";
+                        content.Domain = URL_MYTOUR;
+                        content.ReferUrl = url;
+                        content.CreateDate = DateTime.Now;
+
+                        //Lưu vào db
+                        ContentDAO msql = new ContentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
+                        await msql.InserContent(content);
+                        msql.Dispose();
+
+                        //Update Status (crawled == 1 )
+                        ContentDAO msql1 = new ContentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
+                        await msql1.UpdateStatus(referUrl);
+                        msql1.Dispose();
+
+                        #region gửi đi cho ILS
+
+                        ArticleDTO_BigData ent = new ArticleDTO_BigData();
+
+                        ent.Id = Common.Utilities.Md5Encode(content.Id);
+                        ent.Content = content.Contents;
+
+                        //Get_Time là thời gian bóc 
+                        ent.Get_Time = content.CreateDate;
+                        ent.Get_Time_String = content.CreateDate.ToString("yyyy-MM-dd HH:mm:ss");
+
+                        ent.Description = content.Summary;
+
+                        ent.Title = content.Subject;
+                        ent.Url = content.ReferUrl;
+                        ent.Source_Id = 0;
+                        ent.Category = content.Category;
+                        ent.Image = content.ImageThumb;
+                        ent.urlAmphtml = "";
+
+                        ent.ContentNoRemoveHtml = ""; // xóa đi khi lưu xuống cho nhẹ
+
+                        string jsonPost = KafkaPreview.ToJson<ArticleDTO_BigData>(ent);
+                        KafkaPreview kafka = new KafkaPreview();
+                        //await kafka.InsertPost(jsonPost, "crawler-preview-post");;
+                        #endregion
+
+                        //Bóc list cmt
+                        HtmlNodeCollection divComment = _document.DocumentNode.SelectNodes("//div[contains(@class,'jss2')]//div[contains(@class,'MuiGrid-container')]");
+                        HtmlNode checkBtnLoadMore = _document.DocumentNode.SelectSingleNode("//div[contains(@id,'evaluate')]//div[3]//div[8]/div");
+
+                        if (divComment != null)
                         {
-                            DTO.CommentDTO commentDTO = new DTO.CommentDTO();
-                            commentDTO.Author = item.SelectSingleNode("./div/div/div[2]/span")?.InnerText;
-                            commentDTO.Point = item.SelectSingleNode("./div[2]/div[1]/div[1]/p")?.InnerText;
-                            commentDTO.ContentsComment = Common.Utilities.RemoveSpecialCharacter(item.SelectSingleNode("./div[2]/div[1]/div[2]/div[1]")?.InnerText);
-                            DateTime postDate = DateTime.Now;
-                            string datecomment = item.SelectSingleNode("./div/div/div[2]/div/div[1]/span").InnerText;
-                            if (!string.IsNullOrEmpty(datecomment))
+                            foreach (HtmlNode item in divComment)
                             {
-                                Common.DateTimeFormatAgain dtFomat = new Common.DateTimeFormatAgain();
-                                string date = dtFomat.GetDate(datecomment, "dd/MM/yyyy");
-
-                                string fulldate = date;
-
-                                try
+                                DTO.CommentDTO commentDTO = new DTO.CommentDTO();
+                                commentDTO.Author = item.SelectSingleNode("./div/div/div[2]/span")?.InnerText;
+                                commentDTO.Point = item.SelectSingleNode("./div[2]/div[1]/div[1]/p")?.InnerText;
+                                commentDTO.ContentsComment = Common.Utilities.RemoveSpecialCharacter(item.SelectSingleNode("./div[2]/div[1]/div[2]/div[1]")?.InnerText);
+                                DateTime postDate = DateTime.Now;
+                                string datecomment = item.SelectSingleNode("./div/div/div[2]/div/div[1]/span").InnerText;
+                                if (!string.IsNullOrEmpty(datecomment))
                                 {
-                                    postDate = Convert.ToDateTime(fulldate);
+                                    Common.DateTimeFormatAgain dtFomat = new Common.DateTimeFormatAgain();
+                                    string date = dtFomat.GetDate(datecomment, "dd/MM/yyyy");
+
+                                    string fulldate = date;
+
+                                    try
+                                    {
+                                        postDate = Convert.ToDateTime(fulldate);
+                                    }
+                                    catch { }
                                 }
-                                catch { }
+                                commentDTO.PostDate = postDate;
+                                commentDTO.CreateDate = DateTime.Now;
+                                commentDTO.Domain = URL_MYTOUR;
+                                commentDTO.ReferUrl = url;
+
+                                commentList.Add(commentDTO);
+                                CommentDAO msql2 = new CommentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
+                                await msql2.InsertListComment(commentDTO);
+                                msql2.Dispose();
+
+                                #region gửi đi cho ILS
+
+                                ArticleDTO_BigData enti = new ArticleDTO_BigData();
+
+                                enti.Comment = commentDTO.ContentsComment;
+                                enti.Author = commentDTO.Author;
+                                enti.Url = commentDTO.ReferUrl;
+                                // thời gian tạo tin
+                                enti.Create_time = commentDTO.PostDate;
+                                enti.Create_Time_String = commentDTO.PostDate.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                //Get_Time là thời gian bóc 
+                                enti.Get_Time = commentDTO.CreateDate;
+                                enti.Get_Time_String = commentDTO.CreateDate.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                string jsonPost1 = KafkaPreview.ToJson<ArticleDTO_BigData>(enti);
+                                KafkaPreview kafka1 = new KafkaPreview();
+                                //await kafka1.InsertPost(jsonPost1, "crawler-preview-post-comment");
+                                #endregion
                             }
-                            commentDTO.PostDate = postDate;
-                            commentDTO.CreateDate = DateTime.Now;
-                            commentDTO.Domain = URL_MYTOUR;
-                            commentDTO.ReferUrl = url;
 
-                            commentList.Add(commentDTO);
-                            CommentDAO msql1 = new CommentDAO(ConnectionDAO.ConnectionToTableLinkProduct);
-                            await msql1.InsertListComment(commentDTO);
-                            msql1.Dispose();
-
-                            #region gửi đi cho ILS
-
-                            ArticleDTO_BigData enti = new ArticleDTO_BigData();
-
-                            enti.Comment = commentDTO.ContentsComment;
-                            enti.Author = commentDTO.Author;
-                            enti.Url = commentDTO.ReferUrl;
-                            // thời gian tạo tin
-                            enti.Create_time = commentDTO.PostDate;
-                            enti.Create_Time_String = commentDTO.PostDate.ToString("yyyy-MM-dd HH:mm:ss");
-
-                            //Get_Time là thời gian bóc 
-                            enti.Get_Time = commentDTO.CreateDate;
-                            enti.Get_Time_String = commentDTO.CreateDate.ToString("yyyy-MM-dd HH:mm:ss");
-
-                            string jsonPost1 = KafkaPreview.ToJson<ArticleDTO_BigData>(enti);
-                            KafkaPreview kafka1 = new KafkaPreview();
-                            //await kafka1.InsertPost(jsonPost1, "crawler-preview-post-comment");
-                            #endregion
                         }
-
-                    }
-                    else
-                    {
-
                     }
                 }
             }
             catch { }
             return commentList;
         }
-    }
+}
 }

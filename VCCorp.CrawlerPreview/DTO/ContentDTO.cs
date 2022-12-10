@@ -18,7 +18,8 @@ namespace VCCorp.CrawlerPreview.DTO
         public string ImageThumb { get; set; } // hình ảnh, thường tách trong nội dung bài viết,lấy hình đầu tiên
         public string ReferUrl { get; set; } // url bóc tách
         public string Domain { get; set; } //domain trang web
-
+        public int Status { get; set; }// check trạng thái bóc hay chưa
+        
         //table si_demand_post
         public string post_id { get; set; }
         public string platform { get; set; }
