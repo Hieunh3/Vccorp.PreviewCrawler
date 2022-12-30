@@ -31,7 +31,8 @@ namespace VCCorp.CrawlerPreview
                     new { Text = "Airbnb", Value = NamePage.AIRBNB },
                     new { Text = "MyTour", Value = NamePage.MYTOUR },
                     new { Text = "VnTrip", Value = NamePage.VNTRIP },
-                    new { Text = "Hotels.Com", Value = NamePage.ViHotels }
+                    new { Text = "Hotels.Com", Value = NamePage.ViHotels },
+                    new { Text = "PasGo", Value = NamePage.PasGo}
             };
             cbNamePage.DataSource = items;
         }
@@ -43,8 +44,8 @@ namespace VCCorp.CrawlerPreview
             switch (a)
             {
                 case NamePage.BESTPRICE_HOTEL:
-                    Thread thrd = new Thread(new ThreadStart(ContentCrawlerHotelBp));
-                    thrd.Start();
+                    //Thread thrd = new Thread(new ThreadStart(ContentCrawlerHotelBp));
+                    //thrd.Start();
                     Thread thrdDetails = new Thread(new ThreadStart(ContentCrawlerHotelBpDeatail));
                     thrdDetails.Start();
 
@@ -65,8 +66,8 @@ namespace VCCorp.CrawlerPreview
                     }
 
                 case NamePage.BESTPRICE_TOUR:
-                    Thread thrd1 = new Thread(new ThreadStart(ContentCrawlerTourBp));
-                    thrd1.Start();
+                    //Thread thrd1 = new Thread(new ThreadStart(ContentCrawlerTourBp));
+                    //thrd1.Start();
                     Thread thrdDetails1 = new Thread(new ThreadStart(ContentCrawlerTourBpDeatail));
                     thrdDetails1.Start();
 
@@ -147,7 +148,25 @@ namespace VCCorp.CrawlerPreview
                         {
                             InitBrowser("https://vi.hotels.com/");
                             await Task.Delay(10_000);
-                            ParserVnTrip parser = new ParserVnTrip(_browser);
+                            ParserHotels parser = new ParserHotels(_browser);
+
+                            await parser.CrawlData();
+
+                        }
+                        catch (Exception)
+                        {
+                        }
+                        await Task.Delay(TimeSpan.FromHours(1));
+                    }
+                case NamePage.PasGo:
+
+                    while (true)
+                    {
+                        try
+                        {
+                            InitBrowser("https://pasgo.vn/");
+                            await Task.Delay(10_000);
+                            ParserPasGo parser = new ParserPasGo(_browser);
 
                             await parser.CrawlData();
 

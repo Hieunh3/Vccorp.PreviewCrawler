@@ -31,7 +31,7 @@ namespace VCCorp.CrawlerPreview.BUS
 
         public async Task CrawlData()
         {
-            //await GetListHotel();
+            await GetListHotel();
             await GetHotelDetail();
 
         }
@@ -165,7 +165,7 @@ namespace VCCorp.CrawlerPreview.BUS
 
                         string jsonPost = KafkaPreview.ToJson<ArticleDTO_BigData>(ent);
                         KafkaPreview kafka = new KafkaPreview();
-                        //await kafka.InsertPost(jsonPost, "crawler-preview-post");
+                        await kafka.InsertPost(jsonPost, "crawler-preview-post");
                         #endregion
 
                         while (true)
@@ -192,12 +192,9 @@ namespace VCCorp.CrawlerPreview.BUS
                                     {
                                         Common.DateTimeFormatAgain dtFomat = new Common.DateTimeFormatAgain();
                                         string date = dtFomat.GetDate(datecomment, "dd/MM/yyyy");
-
-                                        string fulldate = date;
-
                                         try
                                         {
-                                            postDate = Convert.ToDateTime(fulldate);
+                                            postDate = Convert.ToDateTime(date);
                                         }
                                         catch { }
                                     }
@@ -229,7 +226,7 @@ namespace VCCorp.CrawlerPreview.BUS
 
                                     string jsonPost1 = KafkaPreview.ToJson<ArticleDTO_BigData>(enti);
                                     KafkaPreview kafka1 = new KafkaPreview();
-                                    //await kafka1.InsertPost(jsonPost1, "crawler-preview-post-comment");
+                                    await kafka1.InsertPost(jsonPost1, "crawler-preview-post-comment");
                                     #endregion
 
                                 }

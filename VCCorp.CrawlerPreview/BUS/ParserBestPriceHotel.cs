@@ -56,8 +56,6 @@ namespace VCCorp.CrawlerPreview.BUS
                         await msql.InsertLinkContent(obj);
                         msql.Dispose();
                     }
-
-
                     // lấy xong trả ra danh sách thôi
                     return lisToReturn;
                 }

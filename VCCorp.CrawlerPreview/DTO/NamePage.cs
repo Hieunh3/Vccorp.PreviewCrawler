@@ -13,6 +13,7 @@ namespace VCCorp.CrawlerPreview.DTO
         AIRBNB,
         MYTOUR,
         VNTRIP,
-        ViHotels
+        ViHotels,
+        PasGo
     }
 }

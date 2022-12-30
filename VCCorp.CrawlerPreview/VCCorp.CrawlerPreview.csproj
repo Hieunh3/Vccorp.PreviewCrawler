@@ -130,6 +130,7 @@
     <Compile Include="BUS\ParserBestPriceTour.cs" />
     <Compile Include="BUS\ParserHotels.cs" />
     <Compile Include="BUS\ParserMyTour.cs" />
+    <Compile Include="BUS\ParserPasGo.cs" />
     <Compile Include="BUS\ParserVnTrip.cs" />
     <Compile Include="Common\Config_System.cs" />
     <Compile Include="Common\DateTimeFormatAgain.cs" />
@@ -141,7 +142,6 @@
     <Compile Include="DAO\ContentDAO.cs" />
     <Compile Include="DTO\CommentDTO.cs" />
     <Compile Include="DTO\ContentDTO.cs" />
-    <Compile Include="DTO\ListUrlDTO.cs" />
     <Compile Include="DTO\NamePage.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

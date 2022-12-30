@@ -1758,6 +1758,21 @@ namespace VCCorp.CrawlerPreview.Common
                     catch { }
                 }
                 #endregion
+
+                #region nếu tồn tại kiểu: cách đây 1 tuần
+                if (text.Contains("năm") || text.Contains("year"))
+                {
+                    int t;
+                    try
+                    {
+                        string tt = Utilities.Regex_GetItemFirst(text, @"[\d]+");
+                        t = Convert.ToInt32(tt) * 365;
+
+                        return DateTime.Now.AddDays(-t).ToString("yyyy-MM-dd hh:mm:ss tt");
+                    }
+                    catch { }
+                }
+                #endregion
             }
 
             return "";

@@ -20,14 +20,5 @@ namespace VCCorp.CrawlerPreview.DTO
         public string Domain { get; set; } //domain trang web
         public int Status { get; set; }// check trạng thái bóc hay chưa
         
-        //table si_demand_post
-        public string post_id { get; set; }
-        public string platform { get; set; }
-        public string link { get; set; }
-        public DateTime create_time { get; set; }
-        public DateTime update_time { get; set; }
-        public DateTime crawled_time { get; set; }
-        public int status { get; set; }
-        public int totalComment { get; set; }
     }
 }
